@@ -19,7 +19,7 @@ app.use(cors({
 // Parse JSON bodies
 app.use(express.json());
 
-// Mount visitor routes
+// Mount visitor routes under both /api/visitors and /visitors
 app.use("/api/visitors", visitorRoutes);
 app.use("/visitors", visitorRoutes);
 
@@ -53,31 +53,29 @@ app.get(["/api/health", "/health"], async (req, res) => {
   });
 });
 
-// Root API directory
-app.get("/api", (req, res) => {
-  res.json({
-    name: "Portfolio Analytics API",
-    status: "active",
-    endpoints: {
-      health: "/api/health",
-      getVisitors: "/api/visitors (GET)",
-      addVisitor: "/api/visitors (POST)",
-      testVisitor: "/api/visitors/test (POST)"
-    }
-  });
-});
+// Serve the Analytics Dashboard HTML for root, /api, /dashboard, /stats
+app.get(["/", "/api", "/dashboard", "/api/dashboard", "/stats", "/api/stats", "/index.html"], (req, res) => {
+  // If client explicitly requests JSON for /api or accepts only JSON
+  if (req.path === "/api" && req.headers.accept && req.headers.accept.includes("application/json") && !req.headers.accept.includes("text/html")) {
+    return res.json({
+      name: "Portfolio Analytics API",
+      status: "active",
+      endpoints: {
+        health: "/api/health",
+        getVisitors: "/api/visitors (GET)",
+        addVisitor: "/api/visitors (POST)",
+        testVisitor: "/api/visitors/test (POST)"
+      }
+    });
+  }
 
-// Serve the Analytics Dashboard for root and dashboard routes
-app.get(["/", "/index.html", "/dashboard"], (req, res) => {
+  // Otherwise serve the Dashboard UI
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(getDashboardHtml());
 });
 
-// Fallback route handler
+// Fallback for all other routes
 app.get("*", (req, res) => {
-  if (req.path.startsWith("/api/")) {
-    return res.status(404).json({ error: "API endpoint not found" });
-  }
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(getDashboardHtml());
 });
