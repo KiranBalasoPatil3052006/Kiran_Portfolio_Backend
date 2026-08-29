@@ -1,17 +1,8 @@
-const express = require("express");
 const path = require("path");
 require("dotenv").config();
 
 const app = require("./api/index");
 const connectDB = require("./lib/db");
-
-// Serve static frontend files from 'public' directory
-app.use(express.static(path.join(__dirname, "public")));
-
-// Fallback to index.html for root or frontend routes
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
 
 const PORT = process.env.PORT || 5000;
 
