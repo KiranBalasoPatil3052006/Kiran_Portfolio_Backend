@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/api/:match*",
+      "destination": "/api"
+    }
+  ],
   "redirects": [
     {
       "source": "/",
