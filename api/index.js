@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const path = require("path");
 require("dotenv").config();
 
 const connectDB = require("../lib/db");
@@ -18,9 +17,6 @@ app.use(cors({
 
 // Parse JSON bodies
 app.use(express.json());
-
-// Serve static assets from public directory
-app.use(express.static(path.join(__dirname, "../public")));
 
 // Mount visitor routes under both /api/visitors and /visitors
 app.use("/api/visitors", visitorRoutes);
@@ -57,7 +53,7 @@ app.get(["/api/health", "/health"], async (req, res) => {
 });
 
 // Root API directory
-app.get("/api", (req, res) => {
+app.get(["/api", "/"], (req, res) => {
   res.json({
     name: "Portfolio Analytics API",
     status: "active",
@@ -70,19 +66,7 @@ app.get("/api", (req, res) => {
   });
 });
 
-// Fallback to index.html for root or SPA frontend routes
-app.get("*", (req, res, next) => {
-  if (req.path.startsWith("/api/")) {
-    return res.status(404).json({ error: "API route not found" });
-  }
-  res.sendFile(path.join(__dirname, "../public", "index.html"), (err) => {
-    if (err) {
-      next(err);
-    }
-  });
-});
-
-// Global Error Handler to prevent function invocation crashes
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error("Unhandled server error:", err);
   res.status(500).json({
