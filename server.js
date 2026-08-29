@@ -1,27 +1,37 @@
 const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
 
-const visitorRoutes = require("./routes/visitorRoutes");
+const app = require("./api/index");
+const connectDB = require("./lib/db");
 
-const app = express();
+// Serve static frontend files from 'public' directory
+app.use(express.static(path.join(__dirname, "public")));
 
-app.use(cors());
-app.use(express.json());
-app.use(express.static("public"));
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => console.log(err));
-
-app.use("/api/visitors", visitorRoutes);
-
-/* Serve stats page */
+// Fallback to index.html for root or frontend routes
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+
+// Start server
+const server = app.listen(PORT, async () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📊 Dashboard available at http://localhost:${PORT}`);
+  console.log(`🩺 Health check at http://localhost:${PORT}/api/health`);
+
+  try {
+    if (process.env.MONGO_URI) {
+      await connectDB();
+      console.log("✅ Connected to MongoDB");
+    } else {
+      console.warn("⚠️ MONGO_URI is not configured in .env");
+    }
+  } catch (err) {
+    console.error("⚠️ MongoDB connection warning:", err.message);
+    console.warn("👉 Make sure your MongoDB URI and network access / credentials are valid in .env");
+  }
+});
+
+module.exports = server;
