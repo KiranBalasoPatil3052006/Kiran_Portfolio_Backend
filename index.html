@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Visitor Analytics | Live Dashboard</title>
+    <meta name="description" content="Real-time visitor tracking and engagement analytics for portfolio website.">
+    <link rel="icon" type="image/x-icon" href="image/unnamed-removebg-preview (4).png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome CDN for modern icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Background glowing ambient effects -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <div class="app-container">
+        <!-- Top Navigation Header -->
+        <header class="app-header">
+            <div class="brand-section">
+                <div class="brand-logo-wrapper">
+                    <img src="image/unnamed-removebg-preview (4).png" alt="Logo" class="brand-logo" onerror="this.style.display='none'; document.getElementById('fallback-logo-icon').style.display='flex';">
+                    <div id="fallback-logo-icon" class="brand-logo-fallback" style="display:none;">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </div>
+                </div>
+                <div class="brand-info">
+                    <h1 class="brand-title">Portfolio Analytics</h1>
+                    <p class="brand-subtitle">Real-time visitor tracking & engagement metrics</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <div class="status-pill status-live" id="liveStatusPill">
+                    <span class="pulse-dot"></span>
+                    <span id="liveStatusText">Live Feed</span>
+                </div>
+                <div class="status-pill status-db" id="dbStatusPill">
+                    <i class="fa-solid fa-database"></i>
+                    <span id="dbStatusText">Checking DB...</span>
+                </div>
+                <button class="btn btn-secondary" id="refreshBtn" title="Refresh data">
+                    <i class="fa-solid fa-rotate" id="refreshIcon"></i>
+                    <span>Refresh</span>
+                </button>
+                <button class="btn btn-primary" id="testVisitorBtn" title="Simulate a new visitor">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Test Visitor</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Database Alert Banner (shown only on DB error) -->
+        <div class="alert-banner" id="dbAlertBanner" style="display: none;">
+            <div class="alert-content">
+                <i class="fa-solid fa-triangle-exclamation alert-icon"></i>
+                <div class="alert-text">
+                    <strong>Database Connection Warning:</strong>
+                    <span id="dbAlertMessage">Unable to connect to MongoDB cluster.</span>
+                </div>
+            </div>
+            <a href="https://vercel.com/docs/concepts/projects/environment-variables" target="_blank" rel="noopener noreferrer" class="alert-link">
+                Configure Vercel Env <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            </a>
+        </div>
+
+        <!-- Metrics Grid -->
+        <section class="metrics-grid">
+            <div class="metric-card card-total">
+                <div class="metric-card-header">
+                    <span class="metric-label">Total Visitors</span>
+                    <div class="metric-icon-box cyan">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <div class="metric-value" id="totalVisitors">0</div>
+                <div class="metric-footer">
+                    <span class="badge badge-cyan"><i class="fa-solid fa-globe"></i> All Time</span>
+                    <span class="metric-subtext">Total recorded sessions</span>
+                </div>
+            </div>
+
+            <div class="metric-card card-entered">
+                <div class="metric-card-header">
+                    <span class="metric-label">Entered Name</span>
+                    <div class="metric-icon-box emerald">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                </div>
+                <div class="metric-value" id="enteredVisitors">0</div>
+                <div class="metric-footer">
+                    <span class="badge badge-emerald"><i class="fa-solid fa-circle-check"></i> Active</span>
+                    <span class="metric-subtext">Engaged with preloader</span>
+                </div>
+            </div>
+
+            <div class="metric-card card-skipped">
+                <div class="metric-card-header">
+                    <span class="metric-label">Skipped Preloader</span>
+                    <div class="metric-icon-box amber">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </div>
+                </div>
+                <div class="metric-value" id="skippedVisitors">0</div>
+                <div class="metric-footer">
+                    <span class="badge badge-amber"><i class="fa-solid fa-bolt"></i> Fast Path</span>
+                    <span class="metric-subtext">Direct to portfolio</span>
+                </div>
+            </div>
+
+            <div class="metric-card card-rate">
+                <div class="metric-card-header">
+                    <span class="metric-label">Engagement Rate</span>
+                    <div class="metric-icon-box purple">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                </div>
+                <div class="metric-value" id="engagementRate">0%</div>
+                <div class="metric-footer">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="engagementBar" style="width: 0%;"></div>
+                    </div>
+                    <span class="metric-subtext" id="engagementRatio">0 of 0 visitors</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Analytics Table Section -->
+        <main class="table-container">
+            <div class="table-header-toolbar">
+                <div class="table-title-area">
+                    <h2 class="table-title">Recent Visitor Logs</h2>
+                    <span class="table-subtitle" id="tableCountText">Showing latest records</span>
+                </div>
+
+                <div class="table-controls">
+                    <!-- Search Input -->
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="searchInput" placeholder="Search visitor by name..." autocomplete="off">
+                        <button class="clear-search-btn" id="clearSearchBtn" style="display: none;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+
+                    <!-- Filter Tabs -->
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">All</button>
+                        <button class="filter-tab" data-filter="entered">Entered Name</button>
+                        <button class="filter-tab" data-filter="skipped">Skipped</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Content -->
+            <div class="table-responsive">
+                <table class="data-table" id="analyticsTable">
+                    <thead>
+                        <tr>
+                            <th style="width: 70px;">#</th>
+                            <th>Visitor</th>
+                            <th style="width: 170px;">Status</th>
+                            <th style="width: 220px;">Timestamp</th>
+                            <th style="width: 140px;" class="text-right">Relative Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="visitorTableBody">
+                        <!-- Dynamic Rows Injected via JS -->
+                    </tbody>
+                </table>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-state-icon">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <h3 class="empty-state-title">No Visitor Records Found</h3>
+                    <p class="empty-state-desc" id="emptyStateDesc">No visitors match your current search and filter criteria.</p>
+                </div>
+
+                <!-- Loading State Skeleton -->
+                <div class="table-loading" id="tableLoading">
+                    <div class="skeleton-row"></div>
+                    <div class="skeleton-row"></div>
+                    <div class="skeleton-row"></div>
+                    <div class="skeleton-row"></div>
+                </div>
+            </div>
+
+            <!-- Table Footer -->
+            <footer class="table-footer">
+                <div class="footer-left">
+                    <span id="lastUpdatedTimestamp">Updated: Just now</span>
+                </div>
+                <div class="footer-right">
+                    <span class="notification-indicator">
+                        <i class="fa-solid fa-bell"></i>
+                        <span id="notifyStatus">Browser Notifications Ready</span>
+                    </span>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Initialization Scripts -->
+    <script>
+        // Initialize EmailJS
+        try {
+            emailjs.init("FN7eVtCPlRnbzYduu");
+        } catch (e) {
+            console.warn("EmailJS init warning:", e);
+        }
+    </script>
+    <script src="script.js"></script>
+</body>
+
+</html>
