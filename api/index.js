@@ -5,6 +5,7 @@ require("dotenv").config();
 
 const connectDB = require("../lib/db");
 const visitorRoutes = require("../routes/visitorRoutes");
+const getDashboardHtml = require("./dashboardHtml");
 
 const app = express();
 
@@ -18,11 +19,11 @@ app.use(cors({
 // Parse JSON bodies
 app.use(express.json());
 
-// Mount visitor routes under both /api/visitors and /visitors
+// Mount visitor routes
 app.use("/api/visitors", visitorRoutes);
 app.use("/visitors", visitorRoutes);
 
-// Health check endpoint (accessible at /api/health and /health)
+// Health check endpoint
 app.get(["/api/health", "/health"], async (req, res) => {
   let dbStatus = "disconnected";
   let dbError = null;
@@ -53,7 +54,7 @@ app.get(["/api/health", "/health"], async (req, res) => {
 });
 
 // Root API directory
-app.get(["/api", "/"], (req, res) => {
+app.get("/api", (req, res) => {
   res.json({
     name: "Portfolio Analytics API",
     status: "active",
@@ -66,9 +67,24 @@ app.get(["/api", "/"], (req, res) => {
   });
 });
 
+// Serve the Analytics Dashboard for root and dashboard routes
+app.get(["/", "/index.html", "/dashboard"], (req, res) => {
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(getDashboardHtml());
+});
+
+// Fallback route handler
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ error: "API endpoint not found" });
+  }
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.send(getDashboardHtml());
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error("Unhandled server error:", err);
+  console.error("Serverless error:", err);
   res.status(500).json({
     success: false,
     error: "Internal Server Error",
